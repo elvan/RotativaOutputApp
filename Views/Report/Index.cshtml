@@ -1,0 +1,62 @@
+@model List<RotativeOutputApp.Models.ReportItem>
+
+@{
+    ViewData["Title"] = "Report Index";
+}
+
+<div class="container mt-4">
+    <h1>Report Generator</h1>
+    
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Sample Report Data</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3">
+                <a asp-action="ExportPdf" class="btn btn-danger">
+                    <i class="bi bi-file-pdf"></i> Export to PDF
+                </a>
+                <a asp-action="ExportExcel" class="btn btn-success">
+                    <i class="bi bi-file-excel"></i> Export to Excel
+                </a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.Id</td>
+                                <td>@item.Name</td>
+                                <td>@item.Description</td>
+                                <td>@item.Amount.ToString("C")</td>
+                                <td>@item.Date.ToString("yyyy-MM-dd")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer text-muted">
+            Total Items: @Model.Count
+        </div>
+    </div>
+</div>
