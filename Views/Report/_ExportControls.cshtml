@@ -1,0 +1,35 @@
+@* Export controls partial view *@
+
+<div class="mb-3">
+    @* PDF Export Form *@
+    <form asp-action="ExportPdf" method="get" class="d-inline">
+        @* Pass all current parameters *@
+        <input type="hidden" name="startDate" value="@ViewBag.StartDate" />
+        <input type="hidden" name="endDate" value="@ViewBag.EndDate" />
+        <input type="hidden" name="searchTerm" value="@ViewBag.SearchTerm" />
+        <input type="hidden" name="minAmount" value="@ViewBag.MinAmount" />
+        <input type="hidden" name="maxAmount" value="@ViewBag.MaxAmount" />
+        <input type="hidden" name="sortColumn" value="@ViewBag.SortColumn" />
+        <input type="hidden" name="sortDirection" value="@ViewBag.SortDirection" />
+        
+        <button type="submit" class="btn btn-danger">
+            <i class="bi bi-file-pdf"></i> Export to PDF
+        </button>
+    </form>
+    
+    @* Excel Export Form *@
+    <form asp-action="ExportExcel" method="get" class="d-inline ms-2">
+        @* Pass all current parameters *@
+        <input type="hidden" name="startDate" value="@ViewBag.StartDate" />
+        <input type="hidden" name="endDate" value="@ViewBag.EndDate" />
+        <input type="hidden" name="searchTerm" value="@ViewBag.SearchTerm" />
+        <input type="hidden" name="minAmount" value="@ViewBag.MinAmount" />
+        <input type="hidden" name="maxAmount" value="@ViewBag.MaxAmount" />
+        <input type="hidden" name="sortColumn" value="@ViewBag.SortColumn" />
+        <input type="hidden" name="sortDirection" value="@ViewBag.SortDirection" />
+        
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-file-excel"></i> Export to Excel
+        </button>
+    </form>
+</div>

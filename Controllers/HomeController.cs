@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using RotativeOutputApp.Models;
+using RotativaOutputApp.Models;
 
-namespace RotativeOutputApp.Controllers;
+namespace RotativaOutputApp.Controllers;
 
 public class HomeController : Controller
 {

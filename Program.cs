@@ -1,15 +1,41 @@
+using RotativaOutputApp.Data;
+using Microsoft.Data.SqlClient;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure EPPlus license globally
-OfficeOpenXml.ExcelPackage.License.SetNonCommercialOrganization("My Noncommercial organization");
+OfficeOpenXml.ExcelPackage.License.SetNonCommercialOrganization("Aegis Ultima Teknologi");
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-// Register the ReportService
-builder.Services.AddScoped<RotativeOutputApp.Services.IReportService, RotativeOutputApp.Services.ReportService>();
+// Register Database Services
+builder.Services.AddScoped<RotativaOutputApp.Data.IDbContext, RotativaOutputApp.Data.SqlDbContext>();
+builder.Services.AddScoped<RotativaOutputApp.Data.Repositories.IReportRepository, RotativaOutputApp.Data.Repositories.ReportRepository>();
+
+// Register Application Services
+builder.Services.AddScoped<RotativaOutputApp.Services.IReportService, RotativaOutputApp.Services.ReportService>();
+
+// Register and configure DatabaseInitializer
+builder.Services.AddTransient<DatabaseInitializer>();
 
 var app = builder.Build();
+
+// Initialize the database (create if not exists, setup tables and stored procedures)
+try
+{
+    // Perform database initialization during application startup
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbInitializer = scope.ServiceProvider.GetRequiredService<DatabaseInitializer>();
+        dbInitializer.Initialize();
+    }
+}
+catch (SqlException ex)
+{
+    Console.WriteLine($"Database initialization error: {ex.Message}");
+    // Application can continue with fallback data if database is not available
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

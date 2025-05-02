@@ -1,27 +1,113 @@
 using Microsoft.AspNetCore.Mvc;
-
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
-
 using Rotativa.AspNetCore;
-
-using RotativeOutputApp.Services;
+using RotativaOutputApp.Models;
+using RotativaOutputApp.Services;
 
 using System.Drawing;
 
-namespace RotativeOutputApp.Controllers;
+using RotativaOutputApp.Data.Repositories;
 
-public class ReportController(IReportService reportService) : Controller
+namespace RotativaOutputApp.Controllers;
+
+public class ReportController : Controller
 {
-    public IActionResult Index()
+    private readonly IReportService _reportService;
+
+    public ReportController(IReportService reportService)
     {
-        var reportData = reportService.GetSampleReportData();
-        return View(reportData);
+        _reportService = reportService ?? throw new ArgumentNullException(nameof(reportService));
     }
 
-    public IActionResult ExportPdf()
+    public IActionResult Index(
+        DateTime? startDate = null,
+        DateTime? endDate = null,
+        int pageNumber = 1,
+        int pageSize = 10,
+        string? sortColumn = "Date",
+        string? sortDirection = "DESC",
+        string? searchTerm = null,
+        decimal? minAmount = null,
+        decimal? maxAmount = null)
     {
-        var reportData = reportService.GetSampleReportData();
+        // Ensure valid pagination parameters
+        pageNumber = pageNumber < 1 ? 1 : pageNumber;
+        pageSize = pageSize < 1 ? 10 : (pageSize > 50 ? 50 : pageSize);
+
+        // Store filter, sort, and pagination params in ViewBag for UI
+        ViewBag.CurrentPage = pageNumber;
+        ViewBag.PageSize = pageSize;
+        ViewBag.SortColumn = sortColumn;
+        ViewBag.SortDirection = sortDirection;
+        ViewBag.SearchTerm = searchTerm;
+        ViewBag.MinAmount = minAmount;
+        ViewBag.MaxAmount = maxAmount;
+
+        // Handle reverse sort direction for toggling in UI
+        ViewBag.SortDirectionReversed = sortDirection?.ToUpper() == "ASC" ? "DESC" : "ASC";
+
+        PaginatedResult<ReportItem> paginatedData;
+
+        if (startDate.HasValue && endDate.HasValue)
+        {
+            // If date range is provided, filter by date range with pagination
+            paginatedData = _reportService.GetReportsByDateRange(
+                startDate.Value,
+                endDate.Value,
+                pageNumber,
+                pageSize,
+                sortColumn,
+                sortDirection ?? "ASC",
+                searchTerm,
+                minAmount,
+                maxAmount);
+
+            ViewBag.StartDate = startDate.Value.ToString("yyyy-MM-dd");
+            ViewBag.EndDate = endDate.Value.ToString("yyyy-MM-dd");
+        }
+        else
+        {
+            // Otherwise get all reports with pagination
+            // Set default date range for the filter (last 30 days)
+            DateTime defaultStartDate = DateTime.Now.AddDays(-30);
+            DateTime defaultEndDate = DateTime.Now;
+
+            ViewBag.StartDate = defaultStartDate.ToString("yyyy-MM-dd");
+            ViewBag.EndDate = defaultEndDate.ToString("yyyy-MM-dd");
+
+            paginatedData = _reportService.GetSampleReportData(
+                pageNumber,
+                pageSize,
+                sortColumn,
+                sortDirection ?? "DESC",
+                searchTerm,
+                minAmount,
+                maxAmount,
+                startDate,
+                endDate);
+        }
+
+        return View(paginatedData);
+    }
+
+    public IActionResult ExportPdf(
+        DateTime? startDate = null,
+        DateTime? endDate = null,
+        string? searchTerm = null,
+        decimal? minAmount = null,
+        decimal? maxAmount = null,
+        string? sortColumn = "Date",
+        string? sortDirection = "DESC")
+    {
+        // Get all data with applied filters and sorting but without pagination (page size = int.MaxValue)
+        var paginatedResult = startDate.HasValue && endDate.HasValue
+            ? _reportService.GetReportsByDateRange(startDate.Value, endDate.Value, 1, int.MaxValue,
+                sortColumn ?? "Date", sortDirection ?? "DESC", searchTerm, minAmount, maxAmount)
+            : _reportService.GetSampleReportData(1, int.MaxValue,
+                sortColumn ?? "Date", sortDirection ?? "DESC", searchTerm, minAmount, maxAmount, startDate, endDate);
+
+        var reportData = paginatedResult.Items.ToList();
 
         try
         {
@@ -53,12 +139,26 @@ public class ReportController(IReportService reportService) : Controller
         }
     }
 
-    public IActionResult ExportExcel()
+    public IActionResult ExportExcel(
+        DateTime? startDate = null,
+        DateTime? endDate = null,
+        string? searchTerm = null,
+        decimal? minAmount = null,
+        decimal? maxAmount = null,
+        string? sortColumn = "Date",
+        string? sortDirection = "DESC")
     {
-        var reportData = reportService.GetSampleReportData();
+        // Get all data with applied filters and sorting but without pagination (page size = int.MaxValue)
+        var paginatedResult = startDate.HasValue && endDate.HasValue
+            ? _reportService.GetReportsByDateRange(startDate.Value, endDate.Value, 1, int.MaxValue,
+                sortColumn ?? "Date", sortDirection ?? "DESC", searchTerm, minAmount, maxAmount)
+            : _reportService.GetSampleReportData(1, int.MaxValue,
+                sortColumn ?? "Date", sortDirection ?? "DESC", searchTerm, minAmount, maxAmount, startDate, endDate);
+
+        var reportData = paginatedResult.Items.ToList();
 
         // Set EPPlus license for EPPlus 8 using the new License API
-        ExcelPackage.License.SetNonCommercialOrganization("My Noncommercial organization");
+        ExcelPackage.License.SetNonCommercialOrganization("Aegis Ultima Teknologi");
 
         using var package = new ExcelPackage();
         // Add a new worksheet to the workbook

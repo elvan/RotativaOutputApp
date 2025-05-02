@@ -1,4 +1,4 @@
-namespace RotativeOutputApp.Models;
+namespace RotativaOutputApp.Models;
 
 public class ReportItem
 {
